@@ -17,13 +17,14 @@ namespace forge {
 		populate_keywords();
 		m_position.cursor = 0;
 		m_position.line = 1;
+		m_line_start = 0;
 	}
 
-	void lexer::set_error(lexer_output* result, lexer_error error, const std::string& error_desc, position error_pos)
+	void lexer::set_error(lexer_output* out, lexer_error error, const std::string& error_desc, position error_pos)
 	{
-		result->error = error;
-		result->error_desc = error_desc;
-		result->error_pos = error_pos;
+		out->error = error;
+		out->error_desc = error_desc;
+		out->error_pos = error_pos;
 	}
 
 	void lexer::set_input(const std::string& input)
@@ -41,9 +42,18 @@ namespace forge {
 		result.token_count = 0;
 
 		while (!is_at_end()) {
-			trim();
-
 			char c = current();
+
+			if (c == '\0') {
+				break;
+			}
+			else if (is_space(c)) {
+				trim();
+				if (c == '\n') {
+					next_line();
+				}
+				continue;
+			}
 
 			if (is_character(c))
 				ident();
@@ -51,13 +61,56 @@ namespace forge {
 				number();
 			else if (c == '"')
 				string();
+			else if (c == '=') {
+				advance();
+				if (current() == '=') {
+					advance();
+					make_token(cursor() - 2, token_type::Eq);
+				}
+				else {
+					make_token(cursor() - 1, token_type::Assign);
+				}
+			}
+			else if (c == '!') {
+				advance();
+				if (current() == '=') {
+					advance();
+					make_token(cursor() - 2, token_type::Ne);
+				}	
+			}
+			else if (c == '<') {
+				advance();
+				if (current() == '=') {
+					advance();
+					make_token(cursor() - 2, token_type::Lte);
+				}
+				else {
+					make_token(cursor() - 1, token_type::Lt);
+				}
+			}
+			else if (c == '>') {
+				advance();
+				if (current() == '=') {
+					advance();
+					make_token(cursor() - 2, token_type::Gte);
+				}
+				else {
+					make_token(cursor() - 1, token_type::Gt);
+				}
+			}
 			else if (c == '+') {
 				advance();
 				make_token(cursor() - 1, token_type::Add);
 			}
 			else if (c == '-') {
 				advance();
-				make_token(cursor() - 1, token_type::Sub);
+				if (current() == '>') {
+					advance();
+					make_token(cursor() - 2, token_type::Arrow);
+				}
+				else {
+					make_token(cursor() - 1, token_type::Sub);
+				}
 			}
 			else if (c == '*') {
 				advance();
@@ -70,6 +123,10 @@ namespace forge {
 			else if (c == ';') {
 				advance();
 				make_token(cursor() - 1, token_type::Semicolon);
+			}
+			else if (c == ':') {
+				advance();
+				make_token(cursor() - 1, token_type::Colon);
 			}
 			else if (c == '.') {
 				advance();
@@ -161,19 +218,13 @@ namespace forge {
 		}
 
 		m_position.cursor++;
-
-		char c = current();
-		if (c == '\n') {
-			next_line();
-			return advance();
-		}
-
-		return c;
+		return current();
 	}
 
 	void lexer::next_line()
 	{
 		m_position.line++;
+		m_line_start = cursor();
 	}
 
 	void lexer::ident()
@@ -242,7 +293,7 @@ namespace forge {
 
 	bool lexer::is_character(char c) const
 	{
-		return std::isalpha(c);
+		return std::isalpha(c) || c == '_';
 	}
 
 	bool lexer::is_number(char c) const
@@ -258,7 +309,7 @@ namespace forge {
 		result.lexeme = lexeme;
 
 		position pos;
-		pos.cursor = start;
+		pos.cursor = start - m_line_start + 1; // +1 for debug purposes
 		pos.line = line();
 		result.pos = pos;
 

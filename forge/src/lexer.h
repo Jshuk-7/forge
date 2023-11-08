@@ -37,7 +37,7 @@ namespace forge {
 	private:
 		void init();
 
-		void set_error(lexer_output* result, lexer_error error, const std::string& error_desc, position error_pos);
+		void set_error(lexer_output* out, lexer_error error, const std::string& error_desc, position error_pos);
 
 	private:
 		uint32_t cursor() const;
@@ -63,6 +63,7 @@ namespace forge {
 	private:
 		std::string m_input;
 		position m_position;
+		uint32_t m_line_start;
 		std::deque<token> m_tokens;
 
 	private:

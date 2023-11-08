@@ -1,5 +1,5 @@
 #include <forge.h>
 
 int main() {
-	forge::start_repl();
+	::forge::execute_script("examples/script.fg");
 }

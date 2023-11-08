@@ -1,5 +1,8 @@
 #include <string>
+#include <format>
+#include <fstream>
 #include <iostream>
+#include <filesystem>
 
 #include "token.h"
 #include "lexer.h"
@@ -27,6 +30,26 @@ namespace forge {
 		forge_result result;
 		uint32_t error_count;
 	};
+
+	std::string read_file(const std::filesystem::path& filepath) {
+		std::string contents;
+		std::ifstream file(filepath);
+
+		if (!file.is_open()) {
+			std::string error = std::format("Error: failed to open file: /{}", filepath.string());
+			printf("%s\n", error.c_str());
+			return "";
+		}
+
+		file.seekg(0, std::ios::end);
+		size_t file_size = file.tellg();
+		contents.resize(file_size);
+		file.seekg(0, std::ios::beg);
+		file.read(contents.data(), file_size);
+
+		file.close();
+		return contents;
+	}
 
 	forge_output process(const std::string& script_name, const std::string& input) {
 		forge_output out;
@@ -59,6 +82,28 @@ namespace forge {
 		return out;
 	}
 
+	forge_output interpret(const std::string& script_name, const std::string& input) {
+		forge_output output = process(script_name, input);
+		if (output.result == forge_result::Failure) {
+			printf("%u error%sgenerated\n",
+				output.error_count,
+				output.error_count > 1 ? "s " : " "
+			);
+		}
+		return output;
+	}
+
+	void execute_script(const std::filesystem::path& script) {
+		std::string contents = read_file(script);
+
+		if (contents.empty()) {
+			return;
+		}
+
+		interpret(script.string(), contents);
+		getchar();
+	}
+
 	void start_repl() {
 		std::string platform = ::fginternal::get_platform();
 		printf("Forge %s on platform %s\n", FORGE_VERSION, platform.c_str());
@@ -68,17 +113,11 @@ namespace forge {
 			printf(">> ");
 			std::getline(std::cin, input);
 
-			forge_output output = process("<stdin>", input);
-			if (output.result == forge_result::Failure) {
-				printf("%u error%sgenerated\n",
-					output.error_count,
-					output.error_count > 1 ? "s " : " "
-				);
-			}
-
 			if (input == "exit") {
 				return;
 			}
+
+			interpret("<stdin>", input);
 		}
 	}
 

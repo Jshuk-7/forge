@@ -2,6 +2,7 @@
 
 #include <string>
 #include <cstdint>
+#include <iomanip>
 
 #include "assert.h"
 
@@ -18,12 +19,25 @@ namespace forge {
 		Proc,
 		Return,
 
+		Assign,
+
+		Eq,
+		Ne,
+
+		Lt,
+		Lte,
+		Gt,
+		Gte,
+
 		Add,
 		Sub,
 		Mul,
 		Div,
 
+		Arrow,
+
 		Semicolon,
+		Colon,
 		Period,
 		Comma,
 
@@ -60,11 +74,20 @@ namespace forge {
 				case token_type::Float:     return "Float";
 				case token_type::Proc:      return "Proc";
 				case token_type::Return:    return "Return";
+				case token_type::Assign:    return "Assign";
+				case token_type::Eq:        return "Eq";
+				case token_type::Ne:        return "Ne";
+				case token_type::Lt:        return "Lt";
+				case token_type::Lte:       return "Lte";
+				case token_type::Gt:        return "Gt";
+				case token_type::Gte:       return "Gte";
 				case token_type::Add:       return "Add";
 				case token_type::Sub:       return "Sub";
 				case token_type::Mul:       return "Mul";
 				case token_type::Div:       return "Div";
+				case token_type::Arrow:     return "Arrow";
 				case token_type::Semicolon: return "Semicolon";
+				case token_type::Colon:     return "Colon";
 				case token_type::Period:    return "Period";
 				case token_type::Comma:     return "Comma";
 				case token_type::LBrace:    return "LBrace";
